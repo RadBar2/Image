@@ -83,11 +83,16 @@ class Image {
        public:
             // Constructors
             Image(string path, int width, int height) {
-                init(path, width, height);
+                setFilepath(path);
+                setWidth(width);
+                setHeight(height);
+                init();
             }
 
             Image(string path) {
-                init(path, 150, 150);
+                setFilepath(path);
+                refreshDimensions();
+                init();
             }
 
             // Destructor
@@ -96,10 +101,7 @@ class Image {
             }
 
     private:
-        void init(string path, int width, int height) {
-            setFilepath(path);
-            setWidth(width);
-            setHeight(height);
+        void init() {
             id = ++lastId;
             ++objectCount;
         }
@@ -114,6 +116,7 @@ class Image {
             }
 
             this->filePath = path;
+            refreshDimensions();
         }
 
         void setWidth(int width) {
@@ -145,10 +148,69 @@ class Image {
             return height;
         }
 
+        // Refreshes the image dimensions from binary headers 
+        void refreshDimensions() {
+            ifstream file(filePath, ios::binary);
+            if (!file) return;
+
+            unsigned char header[8];
+            file.read(reinterpret_cast<char*>(header), 8);
+
+            //PNG: Dimensions start at offset 16
+            if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) {
+                file.seekg(16);
+                unsigned char buffer[8];
+                file.read(reinterpret_cast<char*>(buffer), 8);
+
+                // PNG stores width/height as 4-byte Big-Endian integers
+                width = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+                height = (buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7];
+            }
+
+            // BMP: Dimensions start at offset 18
+            else if (header[0] == 'B' && header[1] == 'M') {
+                file.seekg(18);
+                unsigned char buffer[8];
+                file.read(reinterpret_cast<char*>(buffer), 8);
+
+                // BMP stores width/height as 4-byte Little-Endian integers
+                width = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
+                height = buffer[4] | (buffer[5] << 8) | (buffer[6] << 16) | (buffer[7] << 24);
+            }
+
+            // JPEG: Requires searching for the SOF (Start of Frame) marker
+            else if (header[0] == 0xFF && header[1] == 0xD8) {
+                file.seekg(2);
+                while (file) {
+                    unsigned char marker[2];
+                    file.read(reinterpret_cast<char*>(marker), 2);
+            
+                    // Check for Start of Frame markers (SOF0, SOF1, SOF2)
+                    if (marker[0] == 0xFF && (marker[1] >= 0xC0 && marker[1] <= 0xC2)) {
+                        file.seekg(3, ios::cur); // Skip length and precision
+                        unsigned char buffer[4];
+                        file.read(reinterpret_cast<char*>(buffer), 4);
+
+                        // JPEG is Big-Endian: [Height High][Height Low][Width High][Width Low]
+                        height = (buffer[0] << 8) | buffer[1];
+                        width = (buffer[2] << 8) | buffer[3];
+                        break;
+                    } else {
+                        // Skip segment: Read length, then seek
+                        unsigned char lengthBuffer[2];
+                        file.read(reinterpret_cast<char*>(lengthBuffer), 2);
+                        unsigned short length = (lengthBuffer[0] << 8) | lengthBuffer[1];
+                        if (length < 2) break;
+                        file.seekg(length - 2, ios::cur);
+                    }
+                }
+            }
+        }
+
         string toString() {
             stringstream ss;
             ss << getId() << " " << getFilePath() 
-                << " " << getWidth() << "" << getHeight();
+                << " " << getWidth() << "x" << getHeight();
             return ss.str();
         }
 };
