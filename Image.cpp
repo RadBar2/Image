@@ -1,10 +1,16 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <sstream>
 
 using namespace std;
 
+/*
+   Validation
+*/
+
+// Checks if filePath exists
 #ifdef _WIN32
     #include <windows.h>
     bool pathExists(string path) {
@@ -18,6 +24,51 @@ using namespace std;
         return (stat(path.c_str(), &buffer) == 0);
     }
 #endif
+
+
+// Checks if the file extension is an image extension
+bool isValidImageExtension(string path) {
+    return path.substr(path.find_last_of('.') + 1) == "jpg"  ||
+           path.substr(path.find_last_of('.') + 1) == "jpeg" ||
+           path.substr(path.find_last_of('.') + 1) == "png"  ||
+           path.substr(path.find_last_of('.') + 1) == "gif"  ||
+           path.substr(path.find_last_of('.') + 1) == "bmp";
+}
+
+
+// Checks if the file signature is an image magic number
+bool isValidImageMagicNumber(string path) {
+    ifstream file(path, ios::binary);
+    unsigned char buffer[8] = {0};
+    file.read(reinterpret_cast<char*>(buffer), 8);
+
+    // Check for JPG (FF D8 FF)
+    if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF)
+        return true;
+    // Check for PNG (89 50 4E 47)
+    if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47)
+        return true;
+    // Check for GIF (GIF87a / GIF89a)
+    if (strncmp(reinterpret_cast<char*>(buffer), "GIF", 3) == 0)
+        return true;
+    // Check for BMP (BM)
+    if (buffer[0] == 'B' && buffer[1] == 'M')
+        return true;
+
+    return false;
+}
+
+
+// Checks if the image is valid
+bool isValidImage(string path) {
+    return !path.empty() &&
+           isValidImageExtension(path) &&
+           isValidImageMagicNumber(path);
+}
+
+/*
+    Class definition
+*/
 
 class Image {
     private:
@@ -55,10 +106,9 @@ class Image {
     public:
         // Setters
         void setFilepath(string path) {
-            if (pathExists(path)) {
+            if (pathExists(path) && isValidImage(path)) {
                 this->filePath = path;
             }
-            
         }
 
         void setWidth(int width) {
