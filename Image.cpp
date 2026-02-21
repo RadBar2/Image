@@ -1,5 +1,8 @@
-#include <iostream>
 #include <fstream>
+
+#include <exception>
+#include <stdexcept>
+
 #include <string>
 #include <cstring>
 #include <sstream>
@@ -25,7 +28,6 @@ using namespace std;
     }
 #endif
 
-
 // Checks if the file extension is an image extension
 bool isValidImageExtension(string path) {
     return path.substr(path.find_last_of('.') + 1) == "jpg"  ||
@@ -35,14 +37,13 @@ bool isValidImageExtension(string path) {
            path.substr(path.find_last_of('.') + 1) == "bmp";
 }
 
-
 // Checks if the file signature is an image magic number
 bool isValidImageMagicNumber(string path) {
     ifstream file(path, ios::binary);
     unsigned char buffer[8] = {0};
     file.read(reinterpret_cast<char*>(buffer), 8);
 
-    // Check for JPG (FF D8 FF)
+    // Check for JPG/JPEG (FF D8 FF)
     if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF)
         return true;
     // Check for PNG (89 50 4E 47)
@@ -58,13 +59,13 @@ bool isValidImageMagicNumber(string path) {
     return false;
 }
 
-
 // Checks if the image is valid
 bool isValidImage(string path) {
     return !path.empty() &&
            isValidImageExtension(path) &&
            isValidImageMagicNumber(path);
 }
+
 
 /*
     Class definition
@@ -106,9 +107,13 @@ class Image {
     public:
         // Setters
         void setFilepath(string path) {
-            if (pathExists(path) && isValidImage(path)) {
-                this->filePath = path;
+            if (!pathExists(path)) {
+                throw invalid_argument("The provided path does not exist");
+            } else if (!isValidImage(path)) {
+                throw invalid_argument("The file is not a valid image");
             }
+
+            this->filePath = path;
         }
 
         void setWidth(int width) {
