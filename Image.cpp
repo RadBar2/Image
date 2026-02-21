@@ -5,6 +5,20 @@
 
 using namespace std;
 
+#ifdef _WIN32
+    #include <windows.h>
+    bool pathExists(string path) {
+        DWORD attributes = GetFileAttributesA(path.c_str());
+        return (attributes != INVALID_FILE_ATTRIBUTES);
+    }
+#else
+    #include <sys/stat.h>
+    bool pathExists(string path) {
+        struct stat buffer;
+        return (stat(path.c_str(), &buffer) == 0);
+    }
+#endif
+
 class Image {
     private:
         static int lastId;
@@ -41,7 +55,10 @@ class Image {
     public:
         // Setters
         void setFilepath(string path) {
-            this->filePath = path;
+            if (pathExists(path)) {
+                this->filePath = path;
+            }
+            
         }
 
         void setWidth(int width) {
