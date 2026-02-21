@@ -114,7 +114,7 @@ class Image {
                 // BMP stores width/height as 4-byte Little-Endian integers
                 width = (unsigned int)buffer[0] | ((unsigned int)buffer[1] << 8) | 
                         ((unsigned int)buffer[2] << 16) | ((unsigned int)buffer[3] << 24);
-                height = (unsigned int)buffer[4] | (unsigned int)(buffer[5] << 8) |
+                height = (unsigned int)buffer[4] | ((unsigned int)buffer[5] << 8) |
                          ((unsigned int)buffer[6] << 16) | ((unsigned int)buffer[7] << 24);
             }
 
