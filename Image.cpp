@@ -20,6 +20,10 @@ class Image {
                 init(path, width, height);
             }
 
+            Image(string path) {
+                init(path, 150, 150);
+            }
+
             // Destructor
             ~Image() {
                 --objectCount;
