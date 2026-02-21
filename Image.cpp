@@ -116,7 +116,6 @@ class Image {
             }
 
             this->filePath = path;
-            refreshDimensions();
         }
 
         void setWidth(int width) {
