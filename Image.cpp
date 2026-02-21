@@ -105,6 +105,17 @@ class Image {
                          ((unsigned int)buffer[6] << 8)  | (unsigned int)buffer[7];
             }
 
+            // GIF: Dimensions start at offset 6
+            else if (strncmp(reinterpret_cast<char*>(header), "GIF", 3) == 0) {
+                file.seekg(6);
+                unsigned char buffer[4];
+                file.read(reinterpret_cast<char*>(buffer), 4);
+
+                // GIF is Little-Endian (Width is 6-7, Height is 8-9)
+                width = (unsigned int)buffer[0] | ((unsigned int)buffer[1] << 8);
+                height = (unsigned int)buffer[2] | ((unsigned int)buffer[3] << 8);
+            }
+
             // BMP: Dimensions start at offset 18
             else if (header[0] == 'B' && header[1] == 'M') {
                 file.seekg(18);
@@ -233,7 +244,7 @@ int Image::objectCount = 0;
 void testRealImageDetection() {
     cout << "--- Testing Real Image Detection ---" << endl;
 
-    // 1. Test a JPG (Make sure "input.jpg" exists in your folder!)
+    // 1. Testing a JPG 
     try {
         Image imgJpg("input.jpg"); 
         cout << "JPG detected: " << imgJpg.getWidth() << "x" << imgJpg.getHeight() << endl;
@@ -242,13 +253,31 @@ void testRealImageDetection() {
         cout << "Skipping JPG test: input.jpg not found." << endl;
     }
 
-    // 2. Test a PNG (Make sure "input.png" exists!)
+    // 2. Testing a PNG 
     try {
         Image imgPng("input.png");
         cout << "PNG detected: " << imgPng.getWidth() << "x" << imgPng.getHeight() << endl;
         assert(imgPng.getWidth() > 0);
     } catch (...) {
         cout << "Skipping PNG test: input.png not found." << endl;
+    }
+
+    // 3. Testing a GIF 
+    try {
+        Image imgPng("input.gif");
+        cout << "GIF detected: " << imgPng.getWidth() << "x" << imgPng.getHeight() << endl;
+        assert(imgPng.getWidth() > 0);
+    } catch (...) {
+        cout << "Skipping GIF test: input.gif not found." << endl;
+    }
+
+    // 4. Testing a BMP
+    try {
+        Image imgPng("input.bmp");
+        cout << "BMP detected: " << imgPng.getWidth() << "x" << imgPng.getHeight() << endl;
+        assert(imgPng.getWidth() > 0);
+    } catch (...) {
+        cout << "Skipping BMP test: input.bmp not found." << endl;
     }
 }
 
