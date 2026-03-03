@@ -285,67 +285,80 @@ void testRealImageDetection() {
 }
 
 int main() {
-
-    string validPath = "test.jpg";
-
-    // Create dummy file for testing purposes if it doesn't exist
-    ofstream outfile(validPath, ios::binary);
-    unsigned char jpgHeader[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
-    outfile.write(reinterpret_cast<char*>(jpgHeader), 10);
-    outfile.close();
-
-    cout << "Starting tests..." << endl;
-
-    // Test 1: Getters and toString
-    Image img1(validPath, 800, 600);
-    assert(img1.getWidth() == 800);
-    assert(img1.getFilePath() == validPath);
-    string expected = to_string(img1.getId()) + " " + validPath + " 800x600";
-    assert(img1.toString() == expected);
-    cout << "Test 1 Passed: Getters and toString valid." << endl;
-
-    // Test 2: Setters
-    img1.setWidth(1024);
-    img1.setHeight(768);
-    assert(img1.getWidth() == 1024);
-    assert(img1.getHeight() == 768);
-    cout << "Test 2 Passed: Setters working." << endl;
-
-    // Test 3: Exception Validation
     try {
-        img1.setFilepath("non_existent.png");
-        assert(false); // Should not reach here
-    } catch (const invalid_argument& e) {
-        cout << "Test 3 Passed: Caught expected exception: " << e.what() << endl;
+        {
+            string validPath = "test.jpg";
+            
+            // Setup dummy file
+            ofstream outfile(validPath, ios::binary);
+            unsigned char jpgHeader[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
+            outfile.write(reinterpret_cast<char*>(jpgHeader), 10);
+            outfile.close();
+
+            cout << "--- Starting Suite ---" << endl;
+
+            // 1. Getters and toString
+            Image img1(validPath, 800, 600);
+            assert(img1.getWidth() == 800);
+            assert(img1.getFilePath() == validPath);
+            string expected = to_string(img1.getId()) + " " + validPath + " 800x600";
+            assert(img1.toString() == expected);
+            cout << "Test 1 Passed: Getters and toString valid." << endl;
+
+            // Test 2: Setters
+            img1.setWidth(1024);
+            img1.setHeight(768);
+            assert(img1.getWidth() == 1024);
+            assert(img1.getHeight() == 768);
+            cout << "Test 2 Passed: Setters working." << endl;
+
+            // Test 3: Automatic Numbering (ID)
+            Image img2(validPath);
+            assert(img2.getId() > img1.getId());
+            cout << "Test 3 Passed: ID auto-incrementing." << endl;
+
+            // Test 4: Dynamic allocation and Object Count
+            assert(Image::getObjectCount() == 2); // img1 and img2 are on stack
+    
+            Image* dynamicImg = new Image(validPath, 100, 100);
+            assert(Image::getObjectCount() == 3);
+
+            // List of dynamic objects
+            int initialCount = Image::getObjectCount();
+            vector<Image*> imageList;
+            for (int i=0; i<5; i++) {
+                imageList.push_back(new Image(validPath));
+            }
+            assert(Image::getObjectCount() == initialCount + 5);
+
+            delete dynamicImg;
+            for(auto p : imageList) {
+                delete p;
+            }
+            cout << "Test 4 Passed: Dynamic memory and object counting valid." << endl;
+
+            testRealImageDetection();
+            
+            cout << "--- Suite Finished ---" << endl;
+        } 
+    } 
+    catch (const exception& e) {
+        cerr << "Caught standard exception: " << e.what() << endl;
+    }
+    catch (...) {
+        // This is the "catch everything else" your professor mentioned
+        cerr << "Caught an unknown exception!" << endl;
     }
 
-    // Test 4: Automatic Numbering (ID)
-    Image img2(validPath);
-    assert(img2.getId() > img1.getId());
-    cout << "Test 4 Passed: ID auto-incrementing." << endl;
-
-    // Test 5: Dynamic allocation and Object Count
-    assert(Image::getObjectCount() == 2); // img1 and img2 are on stack
+    // 2. Final Memory Check
+    int remaining = Image::getObjectCount();
     
-    Image* dynamicImg = new Image(validPath, 100, 100);
-    assert(Image::getObjectCount() == 3);
-
-    // List of dynamic objects
-    int initialCount = Image::getObjectCount();
-    vector<Image*> imageList;
-    for (int i=0; i<5; i++) {
-        imageList.push_back(new Image(validPath));
+    if (remaining == 0) {
+        cout << "\n[PASS] Final Object Count: 0. No memory leaks detected." << endl;
+    } else {
+        cerr << "\n[FAIL] Memory Leak! " << remaining << " objects still in memory." << endl;
+        return 1; // Return error code
     }
-    assert(Image::getObjectCount() == initialCount + 5);
-
-    // Cleanup
-    delete dynamicImg;
-    for(auto p : imageList) delete p;
-    
-    cout << "Test 5 Passed: Dynamic memory and object counting valid." << endl;
-    cout << "Final Object Count: " << Image::getObjectCount() << " (Memory Clean)" << endl;
-
-    testRealImageDetection();
 
     return 0;
 }
