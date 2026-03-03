@@ -88,12 +88,22 @@ class Image {
         void setHeight(int height) { this->height = height; }
         
         // Getters
-        static int getObjectCount() { return objectCount; }
-        int getId() { return id; }
-        string getFilePath() { return filePath;}
+        static int getObjectCount() {
+             return objectCount; 
+        }
+        int getId() { 
+            return id; 
+        }
+        string getFilePath() {
+            return filePath;
+        }
 
-        int getWidth() { return width; }
-        int getHeight() { return height; }
+        int getWidth() {
+            return width; 
+        }
+        int getHeight() {
+            return height; 
+        }
 
         string toString() {
             stringstream ss;
