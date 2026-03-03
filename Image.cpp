@@ -326,7 +326,6 @@ int main() {
         cerr << "Caught standard exception: " << e.what() << endl;
     }
     catch (...) {
-        // This is the "catch everything else" your professor mentioned
         cerr << "Caught an unknown exception!" << endl;
     }
 
@@ -337,7 +336,7 @@ int main() {
         cout << "\n[PASS] Final Object Count: 0. No memory leaks detected." << endl;
     } else {
         cerr << "\n[FAIL] Memory Leak! " << remaining << " objects still in memory." << endl;
-        return 1; // Return error code
+        return 1;
     }
 
     return 0;
