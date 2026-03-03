@@ -281,57 +281,57 @@ void testRealImageDetection() {
 
 int main() {
     try {
-            string validPath = "test.jpg";
+        string validPath = "test.jpg";
             
-            // Setup dummy file
-            ofstream outfile(validPath, ios::binary);
-            unsigned char jpgHeader[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
-            outfile.write(reinterpret_cast<char*>(jpgHeader), 10);
-            outfile.close();
+        // Setup dummy file
+        ofstream outfile(validPath, ios::binary);
+        unsigned char jpgHeader[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
+        outfile.write(reinterpret_cast<char*>(jpgHeader), 10);
+        outfile.close();
 
-            cout << "--- Starting Suite ---" << endl;
+        cout << "--- Starting Suite ---" << endl;
 
-            // 1. Getters and toString
-            Image img1(validPath, 800, 600);
-            assert(img1.getWidth() == 800);
-            assert(img1.getFilePath() == validPath);
-            string expected = to_string(img1.getId()) + " " + validPath + " 800x600";
-            assert(img1.toString() == expected);
-            cout << "Test 1 Passed: Getters and toString valid." << endl;
+        // 1. Getters and toString
+        Image img1(validPath, 800, 600);
+        assert(img1.getWidth() == 800);
+        assert(img1.getFilePath() == validPath);
+        string expected = to_string(img1.getId()) + " " + validPath + " 800x600";
+        assert(img1.toString() == expected);
+        cout << "Test 1 Passed: Getters and toString valid." << endl;
 
-            // Test 2: Setters
-            img1.setWidth(1024);
-            assert(img1.getWidth() == 1024);
-            cout << "Test 2 Passed: Setters working." << endl;
+        // Test 2: Setters
+        img1.setWidth(1024);
+        assert(img1.getWidth() == 1024);
+        cout << "Test 2 Passed: Setters working." << endl;
 
-            // Test 3: Automatic Numbering (ID)
-            Image img2(validPath);
-            assert(img2.getId() > img1.getId());
-            cout << "Test 3 Passed: ID auto-incrementing." << endl;
+        // Test 3: Automatic Numbering (ID)
+        Image img2(validPath);
+        assert(img2.getId() > img1.getId());
+        cout << "Test 3 Passed: ID auto-incrementing." << endl;
 
-            // Test 4: Dynamic allocation and Object Count
-            assert(Image::getObjectCount() == 2); // img1 and img2 are on stack
+        // Test 4: Dynamic allocation and Object Count
+        assert(Image::getObjectCount() == 2); // img1 and img2 are on stack
     
-            Image* dynamicImg = new Image(validPath, 100, 100);
-            assert(Image::getObjectCount() == 3);
+        Image* dynamicImg = new Image(validPath, 100, 100);
+        assert(Image::getObjectCount() == 3);
 
-            // List of dynamic objects
-            int initialCount = Image::getObjectCount();
-            vector<Image*> imageList;
-            for (int i=0; i<5; i++) {
-                imageList.push_back(new Image(validPath));
-            }
-            assert(Image::getObjectCount() == initialCount + 5);
+        // List of dynamic objects
+        int initialCount = Image::getObjectCount();
+        vector<Image*> imageList;
+        for (int i=0; i<5; i++) {
+            imageList.push_back(new Image(validPath));
+        }
+        assert(Image::getObjectCount() == initialCount + 5);
 
-            delete dynamicImg;
-            for(auto p : imageList) {
-                delete p;
-            }
-            cout << "Test 4 Passed: Dynamic memory and object counting valid." << endl;
+        delete dynamicImg;
+        for(auto p : imageList) {
+            delete p;
+        }
+        cout << "Test 4 Passed: Dynamic memory and object counting valid." << endl;
 
-            testRealImageDetection();
+        testRealImageDetection();
             
-            cout << "--- Suite Finished ---" << endl;
+        cout << "--- Suite Finished ---" << endl;
     } 
     catch (const exception& e) {
         cerr << "Caught standard exception: " << e.what() << endl;
