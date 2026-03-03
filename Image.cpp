@@ -89,11 +89,13 @@ class Image {
         
         // Getters
         static int getObjectCount() {
-             return objectCount; 
+            return objectCount; 
         }
+
         int getId() { 
             return id; 
         }
+
         string getFilePath() {
             return filePath;
         }
@@ -101,6 +103,7 @@ class Image {
         int getWidth() {
             return width; 
         }
+
         int getHeight() {
             return height; 
         }
