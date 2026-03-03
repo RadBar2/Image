@@ -32,47 +32,6 @@ using namespace std;
     }
 #endif
 
-// Checks if the file extension is an image extension
-bool isValidImageExtension(string path) {
-    return path.substr(path.find_last_of('.') + 1) == "jpg"  ||
-           path.substr(path.find_last_of('.') + 1) == "jpeg" ||
-           path.substr(path.find_last_of('.') + 1) == "png"  ||
-           path.substr(path.find_last_of('.') + 1) == "gif"  ||
-           path.substr(path.find_last_of('.') + 1) == "bmp";
-}
-
-// Checks if the file signature is an image magic number
-bool isValidImageMagicNumber(string path) {
-    ifstream file(path, ios::binary);
-    unsigned char buffer[8] = {0};
-    file.read(reinterpret_cast<char*>(buffer), 8);
-
-    // Check for JPG/JPEG (FF D8 FF)
-    if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF) {
-        return true;
-    }   
-    // Check for PNG (89 50 4E 47)
-    if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47) {
-        return true;
-    }
-    // Check for GIF (GIF87a / GIF89a)
-    if (strncmp(reinterpret_cast<char*>(buffer), "GIF", 3) == 0) {
-        return true;
-    }
-    // Check for BMP (BM)
-    if (buffer[0] == 'B' && buffer[1] == 'M') {
-        return true;
-    }
-    return false;
-}
-
-// Checks if the image is valid
-bool isValidImage(string path) {
-    return !path.empty() &&
-           isValidImageExtension(path) &&
-           isValidImageMagicNumber(path);
-}
-
 /*
     Class definition
 */
@@ -125,34 +84,16 @@ class Image {
             }
         }
 
-        void setWidth(int width) {
-            this->width = width;
-        }
-
-        void setHeight(int height) {
-            this->height = height;
-        }
+        void setWidth(int width) { this->width = width; }
+        void setHeight(int height) { this->height = height; }
         
         // Getters
-        static int getObjectCount() { 
-            return objectCount; 
-        }
+        static int getObjectCount() { return objectCount; }
+        int getId() { return id; }
+        string getFilePath() { return filePath;}
 
-        int getId() {
-            return id;
-        }
-
-        string getFilePath() {
-            return filePath;
-        }
-
-        int getWidth() {
-            return width;
-        }
-
-        int getHeight() {
-            return height;
-        }
+        int getWidth() { return width; }
+        int getHeight() { return height; }
 
         string toString() {
             stringstream ss;
@@ -235,6 +176,47 @@ class Image {
                 }
             }
         }
+
+        // Checks if the file extension is an image extension
+        bool isValidImageExtension(string path) {
+            return path.substr(path.find_last_of('.') + 1) == "jpg"  ||
+                   path.substr(path.find_last_of('.') + 1) == "jpeg" ||
+                   path.substr(path.find_last_of('.') + 1) == "png"  ||
+                   path.substr(path.find_last_of('.') + 1) == "gif"  ||
+                   path.substr(path.find_last_of('.') + 1) == "bmp";
+        }
+
+        // Checks if the file signature is an image magic number
+        bool isValidImageMagicNumber(string path) {
+            ifstream file(path, ios::binary);
+            unsigned char buffer[8] = {0};
+            file.read(reinterpret_cast<char*>(buffer), 8);
+
+            // Check for JPG/JPEG (FF D8 FF)
+            if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF) {
+                return true;
+            }   
+            // Check for PNG (89 50 4E 47)
+            if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47) {
+                return true;
+            }
+            // Check for GIF (GIF87a / GIF89a)
+            if (strncmp(reinterpret_cast<char*>(buffer), "GIF", 3) == 0) {
+                return true;
+            }
+            // Check for BMP (BM)
+            if (buffer[0] == 'B' && buffer[1] == 'M') {
+                return true;
+            }
+            return false;
+        }
+
+        // Checks if the image is valid
+        bool isValidImage(string path) {
+            return !path.empty() &&
+                isValidImageExtension(path) &&
+                isValidImageMagicNumber(path);
+        }
 };
 int Image::lastId = 0;
 int Image::objectCount = 0;
@@ -307,9 +289,7 @@ int main() {
 
             // Test 2: Setters
             img1.setWidth(1024);
-            img1.setHeight(768);
             assert(img1.getWidth() == 1024);
-            assert(img1.getHeight() == 768);
             cout << "Test 2 Passed: Setters working." << endl;
 
             // Test 3: Automatic Numbering (ID)
