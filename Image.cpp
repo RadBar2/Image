@@ -281,7 +281,6 @@ void testRealImageDetection() {
 
 int main() {
     try {
-        {
             string validPath = "test.jpg";
             
             // Setup dummy file
@@ -333,7 +332,6 @@ int main() {
             testRealImageDetection();
             
             cout << "--- Suite Finished ---" << endl;
-        } 
     } 
     catch (const exception& e) {
         cerr << "Caught standard exception: " << e.what() << endl;
