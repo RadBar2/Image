@@ -48,18 +48,21 @@ bool isValidImageMagicNumber(string path) {
     file.read(reinterpret_cast<char*>(buffer), 8);
 
     // Check for JPG/JPEG (FF D8 FF)
-    if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF)
+    if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF) {
         return true;
+    }   
     // Check for PNG (89 50 4E 47)
-    if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47)
+    if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47) {
         return true;
+    }
     // Check for GIF (GIF87a / GIF89a)
-    if (strncmp(reinterpret_cast<char*>(buffer), "GIF", 3) == 0)
+    if (strncmp(reinterpret_cast<char*>(buffer), "GIF", 3) == 0) {
         return true;
+    }
     // Check for BMP (BM)
-    if (buffer[0] == 'B' && buffer[1] == 'M')
+    if (buffer[0] == 'B' && buffer[1] == 'M') {
         return true;
-
+    }
     return false;
 }
 
@@ -82,82 +85,6 @@ class Image {
         int id;
         string filePath;
         int width, height;
-
-        // Refreshes the image dimensions from binary headers 
-        void refreshDimensions() {
-            ifstream file(filePath, ios::binary);
-            if (!file) return;
-
-            unsigned char header[8];
-            file.read(reinterpret_cast<char*>(header), 8);
-
-            //PNG: Dimensions start at offset 16
-            if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) {
-                file.seekg(16);
-                unsigned char buffer[8];
-                file.read(reinterpret_cast<char*>(buffer), 8);
-
-                // PNG stores width/height as 4-byte Big-Endian integers
-                width = ((unsigned int)buffer[0] << 24) | ((unsigned int)buffer[1] << 16) | 
-                        ((unsigned int)buffer[2] << 8)  | (unsigned int)buffer[3];
-
-                height = ((unsigned int)buffer[4] << 24) | ((unsigned int)buffer[5] << 16) | 
-                         ((unsigned int)buffer[6] << 8)  | (unsigned int)buffer[7];
-            }
-
-            // GIF: Dimensions start at offset 6
-            else if (strncmp(reinterpret_cast<char*>(header), "GIF", 3) == 0) {
-                file.seekg(6);
-                unsigned char buffer[4];
-                file.read(reinterpret_cast<char*>(buffer), 4);
-
-                // GIF is Little-Endian (Width is 6-7, Height is 8-9)
-                width = (unsigned int)buffer[0] | ((unsigned int)buffer[1] << 8);
-                height = (unsigned int)buffer[2] | ((unsigned int)buffer[3] << 8);
-            }
-
-            // BMP: Dimensions start at offset 18
-            else if (header[0] == 'B' && header[1] == 'M') {
-                file.seekg(18);
-                unsigned char buffer[8];
-                file.read(reinterpret_cast<char*>(buffer), 8);
-
-                // BMP stores width/height as 4-byte Little-Endian integers
-                width = (unsigned int)buffer[0] | ((unsigned int)buffer[1] << 8) | 
-                        ((unsigned int)buffer[2] << 16) | ((unsigned int)buffer[3] << 24);
-                height = (unsigned int)buffer[4] | ((unsigned int)buffer[5] << 8) |
-                         ((unsigned int)buffer[6] << 16) | ((unsigned int)buffer[7] << 24);
-            }
-
-            // JPEG: Requires searching for the SOF (Start of Frame) marker
-            else if (header[0] == 0xFF && header[1] == 0xD8) {
-                file.seekg(2);
-                while (file) {
-                    unsigned char marker[2];
-                    file.read(reinterpret_cast<char*>(marker), 2);
-            
-                    // Check for Start of Frame markers (SOF0, SOF1, SOF2)
-                    if (marker[0] == 0xFF && (marker[1] >= 0xC0 && marker[1] <= 0xC2)) {
-                        file.seekg(3, ios::cur); // Skip length and precision
-                        unsigned char buffer[4];
-                        file.read(reinterpret_cast<char*>(buffer), 4);
-
-                        // JPEG is Big-Endian: [Height High][Height Low][Width High][Width Low]
-                        height = ((unsigned int)buffer[0] << 8) | (unsigned int)buffer[1];
-                        width  = ((unsigned int)buffer[2] << 8) | (unsigned int)buffer[3];
-                        break;
-                    } else {
-                        // Skip segment: Read length, then seek
-                        unsigned char lengthBuffer[2];
-                        file.read(reinterpret_cast<char*>(lengthBuffer), 2);
-                        unsigned short length = (lengthBuffer[0] << 8) | lengthBuffer[1];
-                        if (length < 2) break;
-                        file.seekg(length - 2, ios::cur);
-                    }
-                }
-            }
-        }
-
 
     public:
         // Constructors
@@ -188,13 +115,14 @@ class Image {
     public:
         // Setters
         void setFilepath(string path) {
-            if (!pathExists(path)) {
-                throw invalid_argument("The provided path does not exist");
-            } else if (!isValidImage(path)) {
+            if (pathExists(path) && isValidImage(path)) {
+                this->filePath = path;
+            } else {
+                if (!pathExists(path)) {
+                    throw invalid_argument("The provided path does not exist");
+                }
                 throw invalid_argument("The file is not a valid image");
             }
-
-            this->filePath = path;
         }
 
         void setWidth(int width) {
@@ -231,6 +159,81 @@ class Image {
             ss << getId() << " " << getFilePath() 
                 << " " << getWidth() << "x" << getHeight();
             return ss.str();
+        }
+
+        void refreshDimensions() {
+            ifstream file(filePath, ios::binary);
+            if (!file) {
+                return;
+            }
+
+            unsigned char header[8];
+            file.read(reinterpret_cast<char*>(header), 8);
+
+            if (header[0] == 0x89 && header[1] == 0x50) {
+                parsePng(file);
+            } else if (strncmp(reinterpret_cast<char*>(header), "GIF", 3) == 0) {
+                parseGif(file);
+            } else if (header[0] == 'B' && header[1] == 'M') {
+                parseBmp(file);
+            } else if (header[0] == 0xFF && header[1] == 0xD8) {
+                parseJpeg(file);
+            }
+        }
+
+    private:
+        // Helper to handle PNG logic
+        void parsePng(ifstream& file) {
+            file.seekg(16);
+            unsigned char buffer[8];
+            file.read(reinterpret_cast<char*>(buffer), 8);
+            width = ((unsigned int)buffer[0] << 24) | ((unsigned int)buffer[1] << 16) | 
+                    ((unsigned int)buffer[2] << 8)  | (unsigned int)buffer[3];
+            height = ((unsigned int)buffer[4] << 24) | ((unsigned int)buffer[5] << 16) | 
+                    ((unsigned int)buffer[6] << 8)  | (unsigned int)buffer[7];
+        }
+
+        // Helper to handle GIF logic
+        void parseGif(ifstream& file) {
+            file.seekg(6);
+            unsigned char buffer[4];
+            file.read(reinterpret_cast<char*>(buffer), 4);
+            width = (unsigned int)buffer[0] | ((unsigned int)buffer[1] << 8);
+            height = (unsigned int)buffer[2] | ((unsigned int)buffer[3] << 8);
+        }
+
+        // Helper to handle BMP logic
+        void parseBmp(ifstream& file) {
+            file.seekg(18);
+            unsigned char buffer[8];
+            file.read(reinterpret_cast<char*>(buffer), 8);
+            width = (unsigned int)buffer[0] | ((unsigned int)buffer[1] << 8) | 
+                    ((unsigned int)buffer[2] << 16) | ((unsigned int)buffer[3] << 24);
+            height = (unsigned int)buffer[4] | ((unsigned int)buffer[5] << 8) |
+                    ((unsigned int)buffer[6] << 16) | ((unsigned int)buffer[7] << 24);
+        }
+
+        // Helper to handle JPEG logic (the loop stays here)
+        void parseJpeg(ifstream& file) {
+            file.seekg(2);
+            while (file) {
+                unsigned char marker[2];
+                file.read(reinterpret_cast<char*>(marker), 2);
+                if (marker[0] == 0xFF && (marker[1] >= 0xC0 && marker[1] <= 0xC2)) {
+                    file.seekg(3, ios::cur);
+                    unsigned char buffer[4];
+                    file.read(reinterpret_cast<char*>(buffer), 4);
+                    height = ((unsigned int)buffer[0] << 8) | (unsigned int)buffer[1];
+                    width  = ((unsigned int)buffer[2] << 8) | (unsigned int)buffer[3];
+                    break;
+                } else {
+                    unsigned char lengthBuffer[2];
+                    file.read(reinterpret_cast<char*>(lengthBuffer), 2);
+                    unsigned short length = (lengthBuffer[0] << 8) | lengthBuffer[1];
+                    if (length < 2) break;
+                    file.seekg(length - 2, ios::cur);
+                }
+            }
         }
 };
 int Image::lastId = 0;
@@ -330,7 +333,7 @@ int main() {
     // List of dynamic objects
     int initialCount = Image::getObjectCount();
     vector<Image*> imageList;
-    for(int i=0; i<5; i++) {
+    for (int i=0; i<5; i++) {
         imageList.push_back(new Image(validPath));
     }
     assert(Image::getObjectCount() == initialCount + 5);
