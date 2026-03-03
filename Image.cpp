@@ -267,9 +267,9 @@ void testRealImageDetection() {
 
     // 3. Testing a GIF 
     try {
-        Image imgPng("input.gif");
-        cout << "GIF detected: " << imgPng.getWidth() << "x" << imgPng.getHeight() << endl;
-        assert(imgPng.getWidth() > 0);
+        Image imgGif("input.gif");
+        cout << "GIF detected: " << imgGif.getWidth() << "x" << imgGif.getHeight() << endl;
+        assert(imgGif.getWidth() > 0);
     } catch (...) {
         cout << "Skipping GIF test: input.gif not found." << endl;
     }
